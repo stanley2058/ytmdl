@@ -54,7 +54,10 @@ func startDownload(download DownloadPackage, callback func()) {
 		title = fmt.Sprintf("%s (covered by %s)", download.Title, download.Artists)
 	}
 
-	os.Rename(coverFileName, coverPath)
+	err := os.Rename(coverFileName, coverPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	convertCover(coverPath)
 
 	addMetadataAndCover(OutputMetadata{
