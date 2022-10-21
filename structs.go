@@ -1,5 +1,7 @@
 package main
 
+import "github.com/rivo/tview"
+
 type DownloadPackage struct {
 	URL     string
 	Title   string
@@ -13,4 +15,11 @@ type OutputMetadata struct {
 	Artists   string
 	Album     string
 	CoverPath string
+}
+
+type TUI struct {
+	Application   *tview.Application
+	Form          *tview.Form
+	Queue         *tview.List
+	DownloadQueue []string
 }

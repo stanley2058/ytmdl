@@ -1,36 +1,57 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-func drawForm(app *tview.Application, modal *tview.Modal) *tview.Form {
+func createTui() TUI {
+	tui := TUI{
+		Application:   tview.NewApplication(),
+		Form:          tview.NewForm(),
+		Queue:         tview.NewList(),
+		DownloadQueue: []string{},
+	}
+
+	tui.Queue.SetBorder(true).SetTitle("Queue").SetBackgroundColor(tcell.ColorDefault)
+	tui.drawForm()
+
+	flex := tview.NewFlex().
+		AddItem(tui.Form, 0, 1, true).
+		AddItem(tui.Queue, 30, 1, false)
+
+	if err := tui.Application.SetRoot(flex, true).EnableMouse(true).Run(); err != nil {
+		log.Panic(err)
+	}
+
+	return tui
+}
+
+func (tui *TUI) drawForm() {
 	curPackage := &DownloadPackage{}
-	form := tview.NewForm()
-	form.
-		AddInputField("Download location", downloadPath, 30, nil, func(t string) { downloadPath = t }).
-		AddInputField("YouTube URL", "", 40, nil, func(t string) { curPackage.URL = t }).
+
+	tui.Form.
+		AddInputField("Download location", downloadPath, 25, nil, func(t string) { downloadPath = t }).
+		AddInputField("YouTube URL", "", 30, nil, func(t string) { curPackage.URL = t }).
 		AddInputField("Title", "", 20, nil, func(t string) { curPackage.Title = t }).
 		AddInputField("Artist(s)", "", 20, nil, func(t string) { curPackage.Artists = t }).
 		AddCheckbox("Is cover", false, func(b bool) { curPackage.IsCover = b }).
 		AddButton("Start", func() {
-			form.Clear(true)
-			app.SetRoot(modal, true)
+			url := tui.enqueue(curPackage)
 			go startDownload(*curPackage, func() {
-				newForm := drawForm(app, modal)
-				app.SetRoot(newForm, true)
-
-				newForm.SetBackgroundColor(tcell.ColorBlack)
-				app.Draw()
-				newForm.SetBackgroundColor(tcell.ColorDefault)
-				app.Draw()
+				tui.Application.QueueUpdateDraw(func() {
+					tui.dequeue(url)
+				})
 			})
+
+			tui.Form.Clear(true)
+			tui.drawForm()
 		}).
 		AddButton("Quit", func() {
-			app.Stop()
+			tui.Application.Stop()
 		}).
 		SetLabelColor(tcell.ColorGold).
 		SetFieldTextColor(tcell.ColorWhite).
@@ -38,22 +59,31 @@ func drawForm(app *tview.Application, modal *tview.Modal) *tview.Form {
 		SetButtonTextColor(tcell.ColorYellowGreen).
 		SetButtonBackgroundColor(tcell.ColorBlack)
 
-	form.SetFocus(1)
-	form.SetBorder(true).
+	tui.Form.SetFocus(1)
+	tui.Form.SetBorder(true).
 		SetTitle(" YouTube Video To MP3 ").
 		SetTitleAlign(tview.AlignCenter).
 		SetBackgroundColor(tcell.ColorDefault)
-	return form
+	tui.Application.SetFocus(tui.Form)
 }
 
-func createTui() {
-	app := tview.NewApplication()
-	modal := tview.NewModal()
-
-	modal.SetText("Downloading...")
-	form := drawForm(app, modal)
-
-	if err := app.SetRoot(form, true).EnableMouse(true).Run(); err != nil {
-		log.Panic(err)
+func (tui *TUI) enqueue(download *DownloadPackage) string {
+	title := fmt.Sprintf("%s - %s", download.Title, download.Artists)
+	if download.IsCover {
+		title = fmt.Sprintf("%s (covered by %s)", download.Title, download.Artists)
 	}
+	tui.Queue.AddItem(title, download.URL, 0, nil)
+	tui.DownloadQueue = append(tui.DownloadQueue, download.URL)
+	return download.URL
+}
+
+func (tui *TUI) dequeue(url string) {
+	index := 0
+	for ; index < len(tui.DownloadQueue); index++ {
+		if tui.DownloadQueue[index] == url {
+			tui.DownloadQueue = append(tui.DownloadQueue[:index], tui.DownloadQueue[index+1:]...)
+			break
+		}
+	}
+	tui.Queue.RemoveItem(index)
 }

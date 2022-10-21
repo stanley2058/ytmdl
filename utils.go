@@ -35,7 +35,6 @@ func getFileName(url string) (audioFileName string, coverFileName string) {
 
 func startDownload(download DownloadPackage, callback func()) {
 	os.Chdir(downloadPath)
-	coverPath := "cover.png"
 
 	finalFileName, coverFileName := getFileName(download.URL)
 
@@ -54,11 +53,12 @@ func startDownload(download DownloadPackage, callback func()) {
 		title = fmt.Sprintf("%s (covered by %s)", download.Title, download.Artists)
 	}
 
+	coverPath := fmt.Sprintf("%s.cover.png", title)
 	err := os.Rename(coverFileName, coverPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	convertCover(coverPath)
+	convertCover(coverPath, title)
 
 	addMetadataAndCover(OutputMetadata{
 		FileName:  finalFileName,
@@ -87,15 +87,13 @@ func getDimension(imgPath string) (width int, height int, err error) {
 	return 0, 0, err
 }
 
-func convertCover(coverPath string) {
+func convertCover(coverPath string, title string) {
 	width, height, err := getDimension(coverPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	margin := (width - height) / 2
-	finalPath := "cover.done.png"
-
-	fmt.Println(width, height, err)
+	finalPath := fmt.Sprintf("%s.cover.done.png", title)
 
 	ffmpeg.Filter([]*ffmpeg.Stream{
 		ffmpeg.Input(coverPath).Video().
@@ -108,7 +106,6 @@ func convertCover(coverPath string) {
 		ffmpeg.Args{fmt.Sprintf("0:%d", margin)},
 	).
 		OverWriteOutput().
-		ErrorToStdOut().
 		Output(finalPath).
 		Run()
 
@@ -137,6 +134,5 @@ func addMetadataAndCover(metadata OutputMetadata) {
 		},
 	).
 		OverWriteOutput().
-		ErrorToStdOut().
 		Run()
 }
