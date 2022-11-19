@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 )
@@ -10,7 +10,7 @@ import (
 var downloadPath string
 
 func main() {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	downloadPath = os.Getenv("XDG_DOWNLOAD_DIR")
 	if downloadPath == "" {

@@ -7,40 +7,27 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"regexp"
+
+	"github.com/google/uuid"
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-func getFileName(url string) (audioFileName string, coverFileName string) {
-	cmd := exec.Command(
-		"yt-dlp",
-		"--get-filename",
-		"-o", "%(title)s.%(ext)s",
-		"-x",
-		"--audio-format", "mp3",
-		url,
-	)
-
-	fName, err := cmd.Output()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	match := regexp.MustCompile(`\.[^.]+$`)
-	audioFileName = match.ReplaceAllString(string(fName), ".mp3")
-	coverFileName = match.ReplaceAllString(string(fName), ".png")
+func getFileName(url string) (id string, audioFileName string, coverFileName string) {
+	id = uuid.New().String()
+	audioFileName = fmt.Sprintf("%s.mp3", string(id))
+	coverFileName = fmt.Sprintf("%s.png", string(id))
 	return
 }
 
 func startDownload(download DownloadPackage, callback func()) {
 	os.Chdir(downloadPath)
 
-	finalFileName, coverFileName := getFileName(download.URL)
+	id, finalFileName, coverFileName := getFileName(download.URL)
 
 	exec.Command(
 		"yt-dlp",
-		"-o", "%(title)s.%(ext)s",
+		"-o", fmt.Sprintf("%s.%%(ext)s", id),
 		"-x",
 		"--audio-format", "mp3",
 		"--write-thumbnail",

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/gdamore/tcell/v2 v2.5.3
+	github.com/google/uuid v1.3.0
 	github.com/rivo/tview v0.0.0-20220906194528-4664d8bf22d9
 	github.com/u2takey/ffmpeg-go v0.4.1
 )
