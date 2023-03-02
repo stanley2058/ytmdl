@@ -39,6 +39,7 @@ func (tui *TUI) drawForm() {
 		AddInputField("Title", "", 20, nil, func(t string) { curPackage.Title = t }).
 		AddInputField("Artist(s)", "", 20, nil, func(t string) { curPackage.Artists = t }).
 		AddCheckbox("Is cover", false, func(b bool) { curPackage.IsCover = b }).
+		AddCheckbox("Square cover art", false, func(b bool) { curPackage.SquareCover = b }).
 		AddButton("Start", func() {
 			url := tui.enqueue(curPackage)
 			go startDownload(*curPackage, func() {

@@ -45,7 +45,7 @@ func startDownload(download DownloadPackage, callback func()) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	convertCover(coverPath, title)
+	convertCover(coverPath, title, download.SquareCover)
 
 	addMetadataAndCover(OutputMetadata{
 		FileName:  finalFileName,
@@ -74,7 +74,7 @@ func getDimension(imgPath string) (width int, height int, err error) {
 	return 0, 0, err
 }
 
-func convertCover(coverPath string, title string) {
+func convertCover(coverPath string, title string, isSquare bool) {
 	width, height, err := getDimension(coverPath)
 	if err != nil {
 		log.Fatal(err)
@@ -82,16 +82,30 @@ func convertCover(coverPath string, title string) {
 	margin := (width - height) / 2
 	finalPath := fmt.Sprintf("%s.cover.done.png", title)
 
-	ffmpeg.Filter([]*ffmpeg.Stream{
-		ffmpeg.Input(coverPath).Video().
-			Filter("crop", ffmpeg.Args{fmt.Sprintf("%d:%d:%d:0", height, height, margin)}).
+	image := ffmpeg.
+		Input(coverPath).Video().
+		Filter("crop", ffmpeg.Args{fmt.Sprintf("%d:%d:%d:0", height, height, margin)})
+
+	if !isSquare {
+		image = image.
 			Filter("gblur", ffmpeg.Args{"sigma=50"}).
-			Filter("scale", ffmpeg.Args{fmt.Sprintf("%d:%d", width, width)}),
-		ffmpeg.Input(coverPath),
-	},
-		"overlay",
-		ffmpeg.Args{fmt.Sprintf("0:%d", margin)},
-	).
+			Filter("scale", ffmpeg.Args{fmt.Sprintf("%d:%d", width, width)})
+	}
+
+	filter := image
+	if !isSquare {
+		stream := []*ffmpeg.Stream{
+			image,
+			ffmpeg.Input(coverPath),
+		}
+		filter = ffmpeg.Filter(
+			stream,
+			"overlay",
+			ffmpeg.Args{fmt.Sprintf("0:%d", margin)},
+		)
+	}
+
+	filter.
 		OverWriteOutput().
 		Output(finalPath).
 		Run()

@@ -3,10 +3,11 @@ package main
 import "github.com/rivo/tview"
 
 type DownloadPackage struct {
-	URL     string
-	Title   string
-	Artists string
-	IsCover bool
+	URL         string
+	Title       string
+	Artists     string
+	IsCover     bool
+	SquareCover bool
 }
 
 type OutputMetadata struct {
