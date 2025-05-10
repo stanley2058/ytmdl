@@ -29,6 +29,7 @@ func startDownload(download DownloadPackage, callback func()) {
 		"yt-dlp",
 		"-o", fmt.Sprintf("%s.%%(ext)s", id),
 		"-x",
+		"--cookies-from-browser", "chrome",
 		"--audio-format", "mp3",
 		"--write-thumbnail",
 		"--convert-thumbnails", "png",
